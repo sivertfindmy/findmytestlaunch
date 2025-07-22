@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Findmy - Satellittsporing for beitedyr</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <style>
+        :root {
+            --primary-color: #1a9f82;
+            --primary-dark: #158a70;
+            --primary-light: #e6f7f3;
+            --primary-bg: #f0f9f7;
+        }
+        .tracking-animation {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(26, 159, 130, 0.7);
+            }
+            
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(26, 159, 130, 0);
+            }
+            
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(26, 159, 130, 0);
+            }
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tracking-animation {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(26, 159, 130, 0.7);
+            }
+            
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(26, 159, 130, 0);
+            }
+            
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(26, 159, 130, 0);
+            }
+        }
+        /* Timeline styles */
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+        .timeline-container { position: relative; }
+        .timeline-line { position: absolute; left: 50%; transform: translateX(-50%); width: 4px; height: 100%; background: linear-gradient(to bottom, #1a535c, #0b3142); z-index: 1; }
+        .timeline-item { position: relative; z-index: 2; }
+        .timeline-dot { position: absolute; left: 50%; transform: translateX(-50%); width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #1a535c, #0b3142); border: 3px solid white; box-shadow: 0 0 0 3px rgba(26, 83, 92, 0.3); z-index: 3; transition: all 0.3s ease; }
+        .timeline-content { transition: all 0.3s ease; overflow: hidden; }
+        .timeline-card { border-radius: 12px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); transition: all 0.3s ease; }
+        .timeline-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
+        .timeline-card-header { background: linear-gradient(135deg, #1a535c, #0b3142); color: white; cursor: pointer; }
+        .timeline-card-body { max-height: 0; transition: max-height 0.5s ease; overflow: hidden; }
+        .timeline-card.expanded .timeline-card-body { max-height: 500px; }
+        .timeline-card.expanded .expand-icon { transform: rotate(180deg); }
+        .expand-icon { transition: transform 0.3s ease; }
+        @media (max-width: 768px) {
+            .timeline-line { left: 30px; }
+            .timeline-dot { left: 30px; }
+            .timeline-item { padding-left: 60px !important; padding-right: 0 !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md fixed top-0 left-0 w-full z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <img src="https://findmy.no/logo.png" alt="Findmy Logo" class="h-10">
+                    </div>
+                </div>
+                <div class="hidden md:flex md:items-center md:space-x-8">
+                    <div class="relative">
+                        <button id="desktop-products-button" class="text-gray-700 hover:text-blue-600 hover:scale-105 px-3 py-2 font-medium flex items-center transition duration-150">
+                            Produkter
+                            <svg id="desktop-products-icon" class="ml-1 w-4 h-4 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="desktop-products-dropdown" class="hidden fixed left-0 right-0 bg-white shadow-lg transition duration-150 z-50 w-full border-t border-gray-200">
+                            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                                <div class="flex space-x-8 justify-center">
+                                    <a href="#produkter" class="px-6 py-3 rounded-md bg-[#1a9f82] text-white font-medium hover:bg-[#158a70] hover:scale-105 transition duration-150 whitespace-nowrap">Model GRØNN</a>
+                                    <a href="#produkter" class="px-6 py-3 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 hover:scale-105 transition duration-150 whitespace-nowrap">Model BLÅ</a>
+                                    <a href="#produkter" class="px-6 py-3 rounded-md bg-red-600 text-white font-medium hover:bg-red-700 hover:scale-105 transition duration-150 whitespace-nowrap">Model RØD</a>
+                                    <a href="#priskalkulator" id="priskalkulator-btn" class="px-6 py-3 rounded-md bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 hover:scale-105 transition duration-150 whitespace-nowrap">Priskalkulator</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <button id="desktop-hvordan-button" class="text-gray-700 hover:text-blue-600 hover:scale-105 px-3 py-2 font-medium flex items-center transition duration-150">
+                            Hvordan fungerer det?
+                            <svg id="desktop-hvordan-icon" class="ml-1 w-4 h-4 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="desktop-hvordan-dropdown" class="hidden fixed left-0 right-0 bg-white shadow-lg transition duration-150 z-50 w-full border-t border-gray-200">
+                            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                                <div class="flex space-x-8 justify-center">
+                                    <a href="#hvordan" class="px-6 py-3 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 hover:scale-105 transition duration-150 whitespace-nowrap">Hvordan fungerer det?</a>
+                                    <a href="#fordeler" class="px-6 py-3 rounded-md bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 hover:scale-105 transition duration-150 whitespace-nowrap">Fordeler</a>
+                                    <a href="#" id="brukerstotte-btn" class="px-6 py-3 rounded-md bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 hover:scale-105 transition duration-150 whitespace-nowrap">Brukerstøtte</a>
+                                    <a href="#" id="tekniske-detaljer-btn" class="px-6 py-3 rounded-md bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 hover:scale-105 transition duration-150 whitespace-nowrap">Tekniske detaljer</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="#kontakt" class="text-gray-700 hover:text-blue-600 hover:scale-105 px-3 py-2 font-medium transition duration-150">Kontakt</a>
+                    <a href="#om-oss" class="text-gray-700 hover:text-blue-600 hover:scale-105 px-3 py-2 font-medium transition duration-150">Om oss</a>
+                    <a href="#produkter" class="bg-[#1a9f82] text-white px-4 py-2 rounded-md font-medium hover:bg-[#158a70] hover:scale-105 transition duration-150">Bestill nå</a>
+                    <a href="#" id="login-btn" class="bg-gray-700 text-white px-4 py-2 rounded-md font-medium hover:bg-gray-800 hover:scale-105 transition duration-150">Logg inn</a>
+                </div>
+                <div class="flex md:hidden items-center">
+                    <button id="mobile-menu-button" class="text-gray-500 hover:text-blue-600">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <div class="relative">
+                    <button id="mobile-products-button" class="flex justify-between items-center w-full px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 font-medium">
+                        Produkter
+                        <svg class="ml-1 w-4 h-4 transform transition-transform duration-200" id="mobile-products-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div id="mobile-products-dropdown" class="hidden bg-gray-50 rounded-md mt-1 mb-2 overflow-x-auto">
+                        <div class="flex p-2 space-x-3">
+                            <a href="#produkter" class="flex-shrink-0 px-3 py-2 rounded-md bg-[#1a9f82] text-white font-medium hover:bg-[#158a70] hover:scale-105 transition-all duration-200 transform">Model GRØNN</a>
+                            <a href="#produkter" class="flex-shrink-0 px-3 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 hover:scale-105 transition-all duration-200 transform">Model BLÅ</a>
+                            <a href="#produkter" class="flex-shrink-0 px-3 py-2 rounded-md bg-red-600 text-white font-medium hover:bg-red-700 hover:scale-105 transition-all duration-200 transform">Model RØD</a>
+                            <a href="#priskalkulator" id="mobile-priskalkulator-btn" class="flex-shrink-0 px-3 py-2 rounded-md bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 hover:scale-105 transition-all duration-200 transform">Priskalkulator</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative">
+                    <button id="mobile-hvordan-button" class="flex justify-between items-center w-full px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 font-medium">
+                        Hvordan fungerer det?
+                        <svg class="ml-1 w-4 h-4 transform transition-transform duration-200" id="mobile-hvordan-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div id="mobile-hvordan-dropdown" class="hidden bg-gray-50 rounded-md mt-1 mb-2">
+                        <a href="#hvordan" class="block px-6 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600">Hvordan fungerer det?</a>
+                        <a href="#fordeler" class="block px-6 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600">Fordeler</a>
+                        <a href="#" class="block px-6 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 mobile-brukerstotte-btn">Brukerstøtte</a>
+                        <a href="#" class="block px-6 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 mobile-tekniske-detaljer-btn">Tekniske detaljer</a>
+                    </div>
+                </div>
+                <a href="#kontakt" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 hover:scale-105 font-medium transition-all duration-200 transform">Kontakt</a>
+                <a href="#om-oss" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 hover:scale-105 font-medium transition-all duration-200 transform">Om oss</a>
+                <a href="#produkter" class="block px-3 py-2 bg-[#1a9f82] text-white rounded-md font-medium hover:bg-[#158a70] hover:scale-105 transition-all duration-200 transform hover:shadow-md text-center mt-3">Bestill nå</a>
+                <a href="#" class="block px-3 py-2 bg-gray-700 text-white rounded-md font-medium hover:bg-gray-800 hover:scale-105 transition-all duration-200 transform hover:shadow-md text-center mt-3 mobile-login-btn">Logg inn</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Add spacing after nav for content to not be hidden -->
+    <div style="height:80px;"></div>
+
+    <!-- Hero Section -->
+    <div class="relative overflow-hidden" id="hero-section">
+        <!-- Split background with white top and image bottom -->
+        <div class="absolute inset-0 z-0 flex flex-col">
+            <!-- White background that fills exactly 40% but with fixed height -->
+            <div class="h-[200px] bg-white"></div>
+            <!-- Image container that takes the rest of the space -->
+            <div class="flex-grow">
+                <img src="https://findmy.no/_next/image?url=https%3A%2F%2Fcms.findmy.no%2Fassets%2Ff8a63b84-9bcb-45c2-bf2f-4977bb0d1c5a.png&w=3840&q=75" alt="Satellite tracking landscape" class="w-full h-full object-cover object-top" style="image-rendering: crisp-edges;">
+            </div>
+        </div>
+        <!-- Content -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 relative z-10 flex flex-col h-full min-h-[700px]">
+            <div class="pt-2">
+                <div class="w-full md:w-2/3 mx-auto text-center">
+                    <h1 class="text-4xl md:text-5xl font-semibold text-white leading-tight text-center">Finn igjen det som betyr mest</h1>
+                    <p class="mt-6 text-2xl md:text-3xl text-white text-center font-semibold">Den eneste sporingstjenesten uavhengig av mobilnettet</p>
+                </div>
+            </div>
+            <div class="mt-64 flex justify-center">
+                <div class="flex flex-col sm:flex-row gap-6">
+                    <a href="#produkter" class="bg-[#1a9f82] text-white px-10 py-5 rounded-lg font-semibold hover:bg-[#158a70] transition duration-150 text-center text-xl">Se våre produkter</a>
+                    <a href="#hvordan" class="bg-transparent text-white border-2 border-white px-10 py-5 rounded-lg font-semibold hover:bg-gray-100 hover:text-gray-800 transition duration-150 text-center text-xl">Hvordan fungerer det?</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div id="fordeler" class="py-16 bg-white relative">
+        <div class="absolute inset-0 z-0 opacity-20">
+            <img src="https://i.pinimg.com/originals/67/35/cf/6735cf12cf8cbd1651a7b8f4f50ee46d.jpg" alt="Sheep grazing in mountains background" class="w-full h-full object-cover brightness-125 contrast-125 saturate-110 filter" style="image-rendering: crisp-edges; -webkit-filter: sharpen(1); filter: sharpen(1);">
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-gray-900">Fordeler med Findmy</h2>
+                <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Vår sporingsteknologi gir deg full kontroll over dine beitedyr, uansett hvor de befinner seg.</p>
+            </div>
+            
+            <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="bg-[#e6f7f3] rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-[#1a9f82]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900">Lang batterilevetid</h3>
+                    <p class="mt-2 text-gray-600">Opptil 12 måneders batterilevetid med optimalisert strømforbruk, perfekt for hele beitesesongen.</p>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="bg-[#e6f7f3] rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-[#1a9f82]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900">Global dekning</h3>
+                    <p class="mt-2 text-gray-600">Satellittbasert sporing som fungerer selv i de mest avsidesliggende områdene uten mobildekning.</p>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="bg-[#e6f7f3] rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-[#1a9f82]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900">Robust og pålitelig</h3>
+                    <p class="mt-2 text-gray-600">Testet etter MIL-STD-810G - en amerikansk militær standard sikrer den maksimale utholdenheten for ytelse i felt.</p>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="bg-[#e6f7f3] rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-[#1a9f82]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900">Brukervennlig app</h3>
+                    <p class="mt-2 text-gray-600">Enkel og intuitiv mobilapp for både iOS og Android som gir deg full oversikt over dine dyr.</p>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="bg-[#e6f7f3] rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-[#1a9f82]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900">Varslingssystem</h3>
+                    <p class="mt-2 text-gray-600">Få umiddelbare varsler ved unormal aktivitet eller hvis dyr beveger seg utenfor definerte områder.</p>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="bg-[#e6f7f3] rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-[#1a9f82]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900">Dataanalyse</h3>
+                    <p class="mt-2 text-gray-600">Få innsikt i bevegelsesmønstre og beiteadferd for bedre forvaltning av dine ressurser.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Section -->
+    <div id="produkter" class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-gray-900">Våre modeller</h2>
+                <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Velg den sporingsløsningen som passer best for dine behov.</p>
+            </div>
+            
+            <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-green-50 p-6 rounded-lg shadow-md border border-green-200">
+                    <div class="flex justify-center mb-6">
+                        <img src="https://findmy.no/_next/image?url=https%3A%2F%2Ffiles.stripe.com%2Flinks%2FMDB8YWNjdF8xTERvcWhFUkc0WVpVSGVNfGZsX3Rlc3RfWWp2YmdaTkg3aWJyaWQ0aDczVW84S29h00qccPXvDh&w=3840&q=75" alt="Model GRØNN" class="w-32 h-32 object-contain">
+                    </div>
+                    <h3 class="text-xl font-semibold text-green-800 text-center">Model GRØNN</h3>
+                    <div class="mt-4 text-center">
+                        <span class="text-2xl font-bold text-gray-900">1 490 kr</span>
+                        <span class="text-gray-600">/enhet</span>
+                    </div>
+                    <ul class="mt-6 space-y-3">
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Satellitt</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span class="text-gray-600">Mobilnett</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Stressvarsel</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Mobiloppsett</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Tilpasset Sendeplan</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">GeoFence</span>
+                        </li>
+                    </ul>
+                    <div class="mt-8">
+                        <a href="#" class="block w-full bg-green-600 text-white text-center px-4 py-2 rounded-md font-medium hover:bg-green-700 transition duration-150">Bestill nå</a>
+                        <a href="#" class="block w-full mt-2 bg-white text-green-600 border border-green-600 text-center px-4 py-2 rounded-md font-medium hover:bg-green-50 transition duration-150">Info GRØNN</a>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 p-6 rounded-lg shadow-md border border-blue-200">
+                    <div class="flex justify-center mb-6">
+                        <img src="https://findmy.no/_next/image?url=https%3A%2F%2Ffiles.stripe.com%2Flinks%2FMDB8YWNjdF8xTERvcWhFUkc0WVpVSGVNfGZsX3Rlc3RfRDlpNXMyQXluUzBsSnl5U0xtTzB4WURn00XOb0dPYk&w=3840&q=75" alt="Model BLÅ" class="w-32 h-32 object-contain">
+                    </div>
+                    <h3 class="text-xl font-semibold text-blue-800 text-center">Model BLÅ</h3>
+                    <div class="mt-4 text-center">
+                        <span class="text-2xl font-bold text-gray-900">2 490 kr</span>
+                        <span class="text-gray-600">/enhet</span>
+                    </div>
+                    <ul class="mt-6 space-y-3">
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span class="text-gray-600">Satellitt</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Mobilnett</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Stressvarsel</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Mobiloppsett</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Tilpasset Sendeplan</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">GeoFence</span>
+                        </li>
+                    </ul>
+                    <div class="mt-8">
+                        <a href="#" class="block w-full bg-blue-600 text-white text-center px-4 py-2 rounded-md font-medium hover:bg-blue-700 transition duration-150">Bestill nå</a>
+                        <a href="#" class="block w-full mt-2 bg-white text-blue-600 border border-blue-600 text-center px-4 py-2 rounded-md font-medium hover:bg-blue-50 transition duration-150">Info BLÅ</a>
+                    </div>
+                </div>
+                
+                <div class="bg-red-50 p-6 rounded-lg shadow-md border border-red-200">
+                    <div class="flex justify-center mb-6">
+                        <img src="https://findmy.no/_next/image?url=https%3A%2F%2Ffiles.stripe.com%2Flinks%2FMDB8YWNjdF8xTERvcWhFUkc0WVpVSGVNfGZsX3Rlc3RfWWZTcFRYUTNrOTRNZmJ1MThJVVFrWWNE00ksPap7z4&w=3840&q=75" alt="Model RØD" class="w-32 h-32 object-contain">
+                    </div>
+                    <h3 class="text-xl font-semibold text-red-800 text-center">Model RØD</h3>
+                    <div class="mt-4 text-center">
+                        <span class="text-2xl font-bold text-gray-900">Kontakt oss</span>
+                        <span class="text-gray-600">for pris</span>
+                    </div>
+                    <ul class="mt-6 space-y-3">
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Satellitt</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Mobilnett</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Stressvarsel</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Mobiloppsett</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">Tilpasset Sendeplan</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span class="text-gray-600">GeoFence</span>
+                        </li>
+                    </ul>
+                    <div class="mt-8">
+                        <a href="#kontakt" class="block w-full bg-red-600 text-white text-center px-4 py-2 rounded-md font-medium hover:bg-red-700 transition duration-150">Kontakt oss</a>
+                        <a href="#" class="block w-full mt-2 bg-white text-red-600 border border-red-600 text-center px-4 py-2 rounded-md font-medium hover:bg-red-50 transition duration-150">Info RØD</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Priskalkulator Section -->
+    <div id="priskalkulator" class="py-16 bg-white">
+        <!-- BEGIN: New Price Calculator (Part 1) -->
+        <!DOCTYPE html>
+        <html lang="no">
+        <head>
+            <!-- ...part 1 head code... -->
+        </head>
+        <body class="min-h-screen gradient-bg">
+            <!-- ...part 1 body code up to the subscription modal... -->
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Model GRØNN Subscription -->
+                <div class="bg-green-900/20 rounded-xl p-5 border border-green-400/30">
+                    <h3 class="text-green-300 font-semibold text-xl mb-4">Model GRØNN</h3>
+                    <p class="text-sm text-green-100/80 mb-3">Satellittbasert sporing med posisjonsbasert abonnement:</p>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center border-b border-green-400/20 pb-2">
+                            <span>200 posisjoner</span>
+                            <span class="font-semibold">299,- NOK</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-green-400/20 pb-2">
+                            <span>300 posisjoner</span>
+                            <span class="font-semibold">379,90 NOK</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-green-400/20 pb-2">
+                            <span>365 posisjoner</span>
+                            <span class="font-semibold">449,- NOK</span>
+                        </div>
+                        <div class="flex justify-between items-center pb-2">
+                            <span>500 posisjoner</span>
+                            <span class="font-semibold">569,- NOK</span>
+                        </div>
+                    </div>
+                </div>
+            <!-- ...wait for part 2 here... -->
+        </body>
+        </html>
+        <!-- END: New Price Calculator (Part 1) -->
+    </div>
+    <!-- ...existing code after priskalkulator... -->
+
+    <!-- How it works -->
+    <div id="hvordan" class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-gray-900">Hvordan fungerer det?</h2>
+                <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Enkel og effektiv sporing av dine beitedyr i fire enkle steg.</p>
+            </div>
+            
+            <div class="mt-16">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center">
+                        <span class="bg-white px-4 text-sm text-gray-500">Slik fungerer det</span>
+                    </div>
+                </div>
+                
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div class="relative">
+                        <div class="bg-[#1a9f82] rounded-full w-12 h-12 flex items-center justify-center text-white font-bold text-xl mb-4">1</div>
+                        <h3 class="text-xl font-semibold text-gray-900">Åpne batterilokket</h3>
+                        <p class="mt-2 text-gray-600">Åpne batterilokket og koble i batteriet på ebjella for å aktivere enheten.</p>
+                        <div class="mt-4">
+                            <svg class="w-32 h-32 mx-auto text-[#1a9f82]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Lightning bolt power icon -->
+                                <path d="M50 20L30 50H45L40 80L70 45H50L55 20H50Z" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="relative">
+                        <div class="bg-[#1a9f82] rounded-full w-12 h-12 flex items-center justify-center text-white font-bold text-xl mb-4">2</div>
+                        <h3 class="text-xl font-semibold text-gray-900">Logg inn på Appen</h3>
+                        <p class="mt-2 text-gray-600">Logg inn på Appen og lag et oppsett med sendeplan og geofence for dine beitedyr.</p>
+                        <div class="mt-4">
+                            <svg class="w-32 h-32 mx-auto text-[#1a9f82]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="25" y="15" width="50" height="70" rx="5" fill="white" stroke="currentColor" stroke-width="2" />
+                                <rect x="30" y="25" width="40" height="40" rx="2" fill="currentColor" fill-opacity="0.2" />
+                                <path d="M35 35H65" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                <path d="M35 45H65" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                <path d="M35 55H50" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                <rect x="35" y="65" width="30" height="10" rx="2" fill="currentColor" />
+                                <circle cx="50" cy="20" r="2" fill="currentColor" />
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="relative">
+                        <div class="bg-[#1a9f82] rounded-full w-12 h-12 flex items-center justify-center text-white font-bold text-xl mb-4">3</div>
+                        <h3 class="text-xl font-semibold text-gray-900">Last opp oppsettet</h3>
+                        <p class="mt-2 text-gray-600">Last opp oppsettet til bjella via Bluetooth for å konfigurere enheten.</p>
+                        <div class="mt-4">
+                            <svg class="w-32 h-32 mx-auto text-[#1a9f82]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Bluetooth icon only -->
+                                <path d="M50 20L65 35L50 50L65 65L50 80L50 50L50 20Z" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                <path d="M50 50L35 65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M50 50L35 35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="relative">
+                        <div class="bg-[#1a9f82] rounded-full w-12 h-12 flex items-center justify-center text-white font-bold text-xl mb-4">4</div>
+                        <h3 class="text-xl font-semibold text-gray-900">Heng bjella på dyret</h3>
+                        <p class="mt-2 text-gray-600">Heng bjella på dyret og se hvor dyret er i terrenget via appen.</p>
+                        <div class="mt-4">
+                            <svg class="w-32 h-32 mx-auto text-[#1a9f82]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Map background -->
+                                <rect x="15" y="20" width="70" height="60" rx="3" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-width="2"/>
+                                <!-- Map features -->
+                                <path d="M15 40L85 40" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/>
+                                <path d="M15 60L85 60" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/>
+                                <path d="M35 20L35 80" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/>
+                                <path d="M55 20L55 80" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/>
+                                <path d="M75 20L75 80" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/>
+                                <!-- Location pin -->
+                                <circle cx="50" cy="50" r="8" fill="currentColor"/>
+                                <circle cx="50" cy="50" r="3" fill="white"/>
+                                <!-- Terrain features -->
+                                <path d="M20 70L30 60L40 65L50 55L60 65L70 55L80 65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <circle cx="65" cy="35" r="5" fill="currentColor" fill-opacity="0.3" stroke="currentColor" stroke-width="1"/>
+                                <circle cx="25" cy="45" r="5" fill="currentColor" fill-opacity="0.3" stroke="currentColor" stroke-width="1"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonials -->
+    <div class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-gray-900">Hva våre kunder sier</h2>
+                <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Hør fra bønder som allerede bruker BeiteSpor for å holde oversikt over sine dyr.</p>
+            </div>
+            
+            <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-blue-600 font-bold text-xl">OJ</span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900">Ole Johansen</h4>
+                            <p class="text-gray-600">Sauebonde, Trøndelag</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-3">
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">"Findmy har revolusjonert måten jeg driver gården på. Jeg har redusert tap av dyr med over 30% siden jeg begynte å bruke systemet. Batterilevetiden er imponerende og dekker hele beitesesongen."</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-blue-600 font-bold text-xl">KL</span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900">Kari Larsen</h4>
+                            <p class="text-gray-600">Geitebonde, Vestlandet</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-3">
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">"Varslingssystemet har vært uvurderlig for meg. Jeg fikk umiddelbar varsling da noen av geitene mine beveget seg utenfor det definerte området, og jeg kunne raskt lokalisere dem. Appen er også svært brukervennlig."</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-blue-600 font-bold text-xl">PH</span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900">Per Hansen</h4>
+                            <p class="text-gray-600">Storfebonde, Østlandet</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-3">
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-gray-900">Ofte stilte spørsmål</h2>
+                <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Finn svar på de vanligste spørsmålene om Findmy.</p>
+            </div>
+            
+            <div class="mt-12 max-w-3xl mx-auto">
+                <div class="space-y-6">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <button class="faq-toggle flex justify-between items-center w-full text-left" data-target="faq-1">
+                            <h3 class="text-lg font-semibold text-gray-900">Hvor lenge varer batteriet?</h3>
+                            <svg class="faq-icon w-5 h-5 text-[#1a9f82] transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="faq-1" class="faq-content mt-2 hidden">
+                            <p class="text-gray-600">Batterilevetiden varierer avhengig av modell og innstillinger. Findmy Basic har opptil 3 måneders batterilevetid, mens Findmy Pro kan vare opptil 6 måneder med optimaliserte innstillinger. Dette dekker normalt en hel beitesesong.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <button class="faq-toggle flex justify-between items-center w-full text-left" data-target="faq-2">
+                            <h3 class="text-lg font-semibold text-gray-900">Fungerer sporingsenheten i områder uten mobildekning?</h3>
+                            <svg class="faq-icon w-5 h-5 text-[#1a9f82] transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="faq-2" class="faq-content mt-2 hidden">
+                            <p class="text-gray-600">Ja, Findmy bruker satellittbasert sporing som fungerer uavhengig av mobildekning. Dette gjør systemet ideelt for avsidesliggende beiteområder og fjellterreng.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <button class="faq-toggle flex justify-between items-center w-full text-left" data-target="faq-3">
+                            <h3 class="text-lg font-semibold text-gray-900">Hvor ofte oppdateres posisjonen?</h3>
+                            <svg class="faq-icon w-5 h-5 text-[#1a9f82] transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="faq-3" class="faq-content mt-2 hidden">
+                            <p class="text-gray-600">Standard oppdateringsfrekvens er 2-4 ganger daglig, avhengig av abonnement. Dette kan tilpasses etter behov, men hyppigere oppdateringer vil påvirke batterilevetiden. Ved unormal aktivitet eller bevegelse utenfor definerte områder, vil systemet automatisk øke oppdateringsfrekvensen.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <button class="faq-toggle flex justify-between items-center w-full text-left" data-target="faq-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Er det en månedlig abonnementsavgift?</h3>
+                            <svg class="faq-icon w-5 h-5 text-[#1a9f82] transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="faq-4" class="faq-content mt-2 hidden">
+                            <p class="text-gray-600">Ja, det er en månedlig eller årlig abonnementsavgift som dekker satellittkommunikasjon, datalagring og app-tilgang. Vi tilbyr rabatterte priser for årlige abonnementer og volumrabatter for større besetninger. Kontakt oss for detaljert prisinformasjon.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <button class="faq-toggle flex justify-between items-center w-full text-left" data-target="faq-5">
+                            <h3 class="text-lg font-semibold text-gray-900">Hvor robust er sporingsenheten?</h3>
+                            <svg class="faq-icon w-5 h-5 text-[#1a9f82] transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="faq-5" class="faq-content mt-2 hidden">
+                            <p class="text-gray-600">BeiteSpor-enhetene er designet for å tåle tøffe forhold i norsk natur. De er værbestandige med IP67-klassifisering (Pro-modellen) eller IP65 (Basic-modellen), som betyr at de er støvtette og tåler vann. Enhetene er testet i ekstreme temperaturer fra -30°C til +60°C.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Us Section -->
+    <div id="om-oss" class="py-16 bg-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Om oss</h2>
+                <p class="mt-4 text-xl text-gray-700 max-w-3xl mx-auto">
+                    Findmy AS er et norsk teknologiselskap som utvikler moderne sporingsløsninger for beitedyr. Vårt mål er å gjøre dyrehold tryggere og mer effektivt, uansett hvor i landet du befinner deg. Med bakgrunn fra landbruk, teknologi og satellittkommunikasjon, jobber vi tett med norske bønder for å levere produkter som virkelig gjør en forskjell.
+                </p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Vår visjon</h3>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Teamet vårt</h3>
+                    <p class="text-gray-700">
+                        Findmy består av dedikerte ingeniører, utviklere og landbruksentusiaster med lang erfaring fra både teknologi og praktisk dyrehold. Vi er stolte av å være en norsk leverandør med lokal tilstedeværelse og personlig kundeservice.
+                    </p>
+                </div>
+            </div>
+            <div class="mt-12 text-center">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Kontakt oss</h3>
+                <p class="text-gray-700">Har du spørsmål om Findmy eller ønsker å bli en del av vårt team? Send oss en e-post på <a href="mailto:kontakt@findmy.no" class="text-[#1a9f82] underline">kontakt@findmy.no</a>.</p>
+            </div>
+            <!-- Timeline integration starts here -->
+            <div class="mt-16">
+                <h3 class="text-2xl font-bold text-gray-900 text-center mb-8">Vår reise</h3>
+                <div class="timeline-container pb-20">
+                    <div class="timeline-line"></div>
+                    <!-- Timeline events: alternate left/right for desktop -->
+                    <!-- Example for first event (left) -->
+                    <div class="timeline-item flex mb-24">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content w-full md:w-5/12 md:pr-8 md:text-right">
+                            <div class="timeline-card bg-white">
+                                <div class="timeline-card-header p-4 flex justify-between items-center cursor-pointer">
+                                    <h3 class="text-xl font-semibold md:hidden">2009: Etablering</h3>
+                                    <h3 class="text-xl font-semibold hidden md:block">2009: Etablering</h3>
+                                    <div class="expand-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="timeline-card-body bg-white">
+                                    <div class="p-4">
+                                        <p class="mb-4">Etter at bøndene Marit og Arnstein mistet mange av dyrene sine på beite, bestemte de seg for å finne en løsning på problemet. Dette førte til etableringen av selskapet i 2009, som senere skulle bli kjent som Findmysheep.</p>
+                                        <p>Selskapet ble grunnlagt med en visjon om å utvikle teknologi som kunne spore beitedyr og redusere tap av dyr på beite.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ...no image for this event... -->
+                    </div>
+                    <!-- Example for second event (right) -->
+                    <div class="timeline-item flex mb-24 md:flex-row-reverse">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content w-full md:w-5/12 md:pl-8">
+                            <div class="timeline-card bg-white">
+                                <div class="timeline-card-header p-4 flex justify-between items-center cursor-pointer">
+                                    <h3 class="text-xl font-semibold md:hidden">2013: Første prototype</h3>
+                                    <h3 class="text-xl font-semibold hidden md:block">2013: Første prototype</h3>
+                                    <div class="expand-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="timeline-card-body bg-white">
+                                    <div class="p-4">
+                                        <p class="mb-4">Den første prototypen av vår sporingsenhet ble testet ut på utvalgte gårder. Tilbakemeldingene var overveldende positive, og vi fikk verdifull innsikt i videreutvikling av produktet.</p>
+                                        <p>Prototype-testingen bekreftet at satellittbasert sporing var veien å gå for å oppnå global dekning.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ...no image for this event... -->
+                    </div>
+                    <!-- 2015: Første kommersielle lansering -->
+                    <div class="timeline-item flex mb-24">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content w-full md:w-5/12 md:pr-8 md:text-right">
+                            <div class="timeline-card bg-white">
+                                <div class="timeline-card-header p-4 flex justify-between items-center cursor-pointer">
+                                    <h3 class="text-xl font-semibold md:hidden">2015: Første kommersielle lansering</h3>
+                                    <h3 class="text-xl font-semibold hidden md:block">2015: Første kommersielle lansering</h3>
+                                    <div class="expand-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="timeline-card-body bg-white">
+                                    <div class="p-4">
+                                        <p class="mb-4">Vi lanserte vår første kommersielle versjon av sporingsenheten, til stor begeistring fra bøndene. Denne versjonen hadde betydelig forbedret batterilevetid og nøyaktighet.</p>
+                                        <p>Lanseringen markerte starten på en ny æra for beiteovervåkning i Norge.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ...no image for this event... -->
+                    </div>
+                    <!-- 2018: Utvidelse av funksjoner -->
+                    <div class="timeline-item flex mb-24 md:flex-row-reverse">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content w-full md:w-5/12 md:pl-8">
+                            <div class="timeline-card bg-white">
+                                <div class="timeline-card-header p-4 flex justify-between items-center cursor-pointer">
+                                    <h3 class="text-xl font-semibold md:hidden">2018: Utvidelse av funksjoner</h3>
+                                    <h3 class="text-xl font-semibold hidden md:block">2018: Utvidelse av funksjoner</h3>
+                                    <div class="expand-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="timeline-card-body bg-white">
+                                    <div class="p-4">
+                                        <p class="mb-4">Vi utvidet funksjonaliteten til sporingsenhetene med nye sensorer for å måle beiteadferd og stress. Dette ga bøndene enda bedre verktøy for å overvåke og ta vare på dyrene sine.</p>
+                                        <p>Oppdateringen inkluderte også forbedringer i mobilappen for enklere bruk og bedre oversikt.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ...no image for this event... -->
+                    </div>
+                    <!-- 2019: Partnerskap med landbruksorganisasjoner -->
+                    <div class="timeline-item flex mb-24">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content w-full md:w-5/12 md:pr-8 md:text-right">
+                            <div class="timeline-card bg-white">
+                                <div class="timeline-card-header p-4 flex justify-between items-center cursor-pointer">
+                                    <h3 class="text-xl font-semibold md:hidden">2019: Partnerskap med landbruksorganisasjoner</h3>
+                                    <h3 class="text-xl font-semibold hidden md:block">2019: Partnerskap med landbruksorganisasjoner</h3>
+                                    <div class="expand-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="timeline-card-body bg-white">
+                                    <div class="p-4">
+                                        <p class="mb-4">Findmy inngikk strategiske partnerskap med flere landbruksorganisasjoner for å tilby våre løsninger til et bredere spekter av bønder. Dette økte vår synlighet og troverdighet i markedet.</p>
+                                        <p>Partnerskapene førte også til utvikling av skreddersydde løsninger for større besetninger og spesifikke behov.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ...no image for this event... -->
+                    </div>
+                    <!-- 2020: Lansering av ny app med sanntidsovervåkning -->
+                    <div class="timeline-item flex mb-24 md:flex-row-reverse">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content w-full md:w-5/12 md:pl-8">
+                            <div class="timeline-card bg-white">
+                                <div class="timeline-card-header p-4 flex justify-between items-center cursor-pointer">
+                                    <h3 class="text-xl font-semibold md:hidden">2020: Lansering av ny app med sanntidsovervåkning</h3>
+                                    <h3 class="text-xl font-semibold hidden md:block">2020: Lansering av ny app med sanntidsovervåkning</h3>
+                                    <div class="expand-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="timeline-card-body bg-white">
+                                    <div class="p-4">
+                                        <p class="mb-4">Vi lanserte en helt ny versjon av mobilappen vår, med fokus på sanntidsovervåkning av dyrene. Bønder kunne nå se nøyaktig hvor dyrene befant seg til enhver tid, noe som økte sikkerheten og reduserte tap.</p>
+                                        <p>Appen inkluderte også nye funksjoner for rapportering og analyse av beiteadferd.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ...no image for this event... -->
+                    </div>
+                    <!-- 2021: Utvikling av AI-drevne innsikter -->
+                    <div class="timeline-item flex mb-24">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content w-full md:w-5/12 md:pr-8 md:text-right">
+                            <div class="timeline-card bg-white">
+                                <div class="timeline-card-header p-4 flex justify-between items-center cursor-pointer">
+                                    <h3 class="text-xl font-semibold md:hidden">2021: Utvikling av AI-drevne innsikter</h3>
+                                    <h3 class="text-xl font-semibold hidden md:block">2021: Utvikling av AI-drevne innsikter</h3>
+                                    <div class="expand-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="timeline-card-body bg-white">
+                                    <div class="p-4">
+                                        <p class="mb-4">Vi begynte å utvikle AI-drevne innsikter for bønder, basert på data samlet inn fra sporingsenhetene. Dette ga bøndene mulighet til å forutsi bevegelsesmønstre og optimalisere beiteområder.</p>
+                                        <p>AI-funksjonen ble en game changer for mange av våre kunder, som rapporterte om bedre dyrevelferd og redusert ressursbruk.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ...no image for this event... -->
+                    </div>
+                    <!-- 2022: Bærekraftig landbruk og samfunnsansvar -->
+                    <div class="timeline-item flex mb-24 md:flex-row-reverse">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content w-full md:w-5/12 md:pl-8">
+                            <div class="timeline-card bg-white">
+                                <div class="timeline-card-header p-4 flex justify-between items-center cursor-pointer">
+                                    <h3 class="text-xl font-semibold md:hidden">2022: Bærekraftig landbruk og samfunnsansvar</h3>
+                                    <h3 class="text-xl font-semibold hidden md:block">2022: Bærekraftig landbruk og samfunnsansvar</h3>
+                                    <div class="expand-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="timeline-card-body bg-white">
+                                    <div class="p-4">
+                                        <p class="mb-4">Findmy forpliktet seg til bærekraftig landbruk ved å tilby løsninger som reduserer miljøpåvirkningen fra dyrehold. Vi samarbeidet med forskningsmiljøer for å utvikle metoder for bærekraftig beitebruk.</p>
+                                        <p>Vårt samfunnsansvar inkluderte også støtte til lokale initiativer og organisasjoner som jobber for dyrevelferd.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ...no image for this event... -->
+                    </div>
+                    <!-- 2024: Fremtidige planer og innovasjoner -->
+                    <div class="timeline-item flex mb-24">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content w-full md:w-5/12 md:pr-8 md:text-right">
+                            <div class="timeline-card bg-white">
+                                <div class="timeline-card-header p-4 flex justify-between items-center cursor-pointer">
+                                    <h3 class="text-xl font-semibold md:hidden">2024: Fremtidige planer og innovasjoner</h3>
+                                    <h3 class="text-xl font-semibold hidden md:block">2024: Fremtidige planer og innovasjoner</h3>
+                                    <div class="expand-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="timeline-card-body bg-white">
+                                    <div class="p-4">
+                                        <p class="mb-4">Vi har ambisiøse planer for fremtiden, inkludert utvikling av nye produkter og tjenester som ytterligere vil forbedre dyrehold og bærekraft. Innovasjon står fortsatt i sentrum av vår strategi.</p>
+                                        <p>Vi ønsker å utvide vår tilstedeværelse internasjonalt og bli en ledende aktør innen sporingsløsninger for landbruk globalt.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ...no image for this event... -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Section -->
+    <div id="kontakt" class="py-16 bg-blue-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900">Kontakt oss</h2>
+                    <p class="mt-4 text-lg text-gray-600">Har du spørsmål eller ønsker mer informasjon om våre produkter? Ta kontakt med oss, så hjelper vi deg.</p>
+                    
+                    <div class="mt-8 space-y-6">
+                        <div class="flex items-start">
+                            <div class="text-gray-600">
+                                <p>+47 123 45 678</p>
+                                <p class="mt-1">Man-Fre: 08:00 - 16:00</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="text-gray-600">
+                                <p>kontakt@findmy.no</p>
+                                <p class="mt-1">Vi svarer normalt innen 24 timer</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="text-gray-600">
+                                <p>Findmy AS</p>
+                                <p class="mt-1">Landbruksveien 123</p>
+                                <p>1234 Beiteby</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 flex space-x-6">
+                        <a href="#" class="text-gray-500 hover:text-blue-600">
+                            <span class="sr-only">Facebook</span>
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-500 hover:text-blue-600">
+                            <span class="sr-only">Instagram</span>
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-500 hover:text-blue-600">
+                            <span class="sr-only">Twitter</span>
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor">
+                                <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-500 hover:text-blue-600">
+                            <span class="sr-only">LinkedIn</span>
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor">
+                                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <form class="bg-white shadow-md rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">Send oss en melding</h3>
+                        <div class="grid grid-cols-1 gap-6">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700">Navn</label>
+                                <input type="text" id="name" name="name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 border">
+                            </div>
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-700">E-post</label>
+                                <input type="email" id="email" name="email" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 border">
+                            </div>
+                            <div>
+                                <label for="phone" class="block text-sm font-medium text-gray-700">Telefon</label>
+                                <input type="tel" id="phone" name="phone" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 border">
+                            </div>
+                            <div>
+                                <label for="subject" class="block text-sm font-medium text-gray-700">Emne</label>
+                                <select id="subject" name="subject" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 border">
+                                    <option value="">Velg emne</option>
+                                    <option value="product">Produktinformasjon</option>
+                                    <option value="support">Teknisk støtte</option>
+                                    <option value="sales">Salg</option>
+                                    <option value="other">Annet</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="message" class="block text-sm font-medium text-gray-700">Melding</label>
+                                <textarea id="message" name="message" rows="4" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 border"></textarea>
+                            </div>
+                            <div>
+                                <button type="submit" class="w-full bg-[#1a9f82] text-white px-4 py-2 rounded-md font-medium hover:bg-[#158a70] transition duration-150">Send melding</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div class="flex items-center">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">"Varslingssystemet har vært uvurderlig for meg. Jeg fikk umiddelbar varsling da noen av geitene mine beveget seg utenfor det definerte området, og jeg kunne raskt lokalisere dem. Appen er også svært brukervennlig."</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-blue-600 font-bold text-xl">PH</span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900">Per Hansen</h4>
+                            <p class="text-gray-600">Storfebonde, Østlandet</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-3">
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">"Varslingssystemet har vært uvurderlig for meg. Jeg fikk umiddelbar varsling da noen av geitene mine beveget seg utenfor det definerte området, og jeg kunne raskt lokalisere dem. Appen er også svært brukervennlig."</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-blue-600 font-bold text-xl">PH</span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900">Per Hansen</h4>
+                            <p class="text-gray-600">Storfebonde, Østlandet</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-3">
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">"Varslingssystemet har vært uvurderlig for meg. Jeg fikk umiddelbar varsling da noen av geitene mine beveget seg utenfor det definerte området, og jeg kunne raskt lokalisere dem. Appen er også svært brukervennlig."</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-blue-600 font-bold text-xl">PH</span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900">Per Hansen</h4>
+                            <p class="text-gray-600">Storfebonde, Østlandet</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-3">
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">"Varslingssystemet har vært uvurderlig for meg. Jeg fikk umiddelbar varsling da noen av geitene mine beveget seg utenfor det definerte området, og jeg kunne raskt lokalisere dem. Appen er også svært brukervennlig."</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-blue-600 font-bold text-xl">PH</span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900">Per Hansen</h4>
+                            <p class="text-gray-600">Storfebonde, Østlandet</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-3">
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">"Varslingssystemet har vært uvurderlig for meg. Jeg fikk umiddelbar varsling da noen av geitene mine beveget seg utenfor det definerte området, og jeg kunne raskt lokalisere dem. Appen er også svært brukervennlig."</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-blue-600 font-bold text-xl">PH</span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900">Per Hansen</h4>
+                            <p class="text-gray-600">Storfebonde, Østlandet</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-3">
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">"Varslingssystemet har vært uvurderlig for meg. Jeg fikk umiddelbar varsling da noen av geitene mine beveget seg utenfor det definerte området, og jeg kunne raskt lokalisere dem. Appen er også svært brukervennlig."</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-blue-600 font-bold text-xl">PH</span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900">Per Hansen</h4>
+                            <p class="text-gray-600">Storfebonde, Østlandet</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-3">
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">"Varslingssystemet har vært uvurderlig for meg. Jeg fikk umiddelbar varsling da noen av geitene mine beveget seg utenfor det definerte området, og jeg kunne raskt lokalisere dem. Appen er også svært brukervennlig."</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-blue-600 font-bold text-xl">PH</span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900">Per Hansen</h4>
+                            <p class="text-gray-600">Storfebonde, Østlandet</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-3">
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">"Varslingssystemet har vært uvurderlig for meg. Jeg fikk umiddelbar varsling da noen av geitene mine beveget seg utenfor det definerte området, og jeg kunne raskt lokalisere dem. Appen er også svært brukervennlig."</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-blue-600 font-bold text-xl">PH</span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900">Per Hansen</h4>
+                            <p class="text-gray-600">Storfebonde, Østlandet</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-3">
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">"Varslingssystemet har vært uvurderlig for meg. Jeg fikk umiddelbar varsling da noen av geitene mine beveget seg utenfor det definerte området, og jeg kunne raskt lokalisere dem. Appen er også svært brukervennlig."</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+    </script>
+
+    <!-- Modal Overlays -->
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg max-w-md w-full mx-4 p-6">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center">
+                    <img src="https://findmy.no/logo.png" alt="Findmy Logo" class="h-8">
+                    <span class="ml-2 text-xl font-bold">Findmy</span>
+                </div>
+                <button class="modal-close text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <p class="text-gray-600">Logg inn for å få tilgang til din konto og sporingsinformasjon.</p>
+                
+                <div>
+                    <label for="login-email" class="block text-sm font-medium text-gray-700">E-post</label>
+                    <input type="email" id="login-email" name="login-email" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 border">
+                </div>
+                
+                <div>
+                    <label for="login-password" class="block text-sm font-medium text-gray-700">Passord</label>
+                    <input type="password" id="login-password" name="login-password" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 border">
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-[#1a9f82] focus:ring-[#1a9f82] border-gray-300 rounded">
+                        <label for="remember-me" class="ml-2 block text-sm text-gray-900">Husk meg</label>
+                    </div>
+                    <div class="text-sm">
+                        <a href="#" class="font-medium text-[#1a9f82] hover:text-[#158a70]">Glemt passord?</a>
+                    </div>
+                </div>
+                
+                <div>
+                    <button type="submit" class="w-full bg-[#1a9f82] text-white px-4 py-2 rounded-md font-medium hover:bg-[#158a70] transition duration-150">Logg inn</button>
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <p class="text-sm text-gray-600">Ikke registrert enda? <a href="#" class="text-[#1a9f82] hover:text-[#158a70] font-medium">Opprett en konto</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'962ae3e19386be38',t:'MTc1MzEwMjkyMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
+                </div>
+            </div>
+        </div>
+    </div>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'962ae3e19386be38',t:'MTc1MzEwMjkyMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
